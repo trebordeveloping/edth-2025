@@ -84,11 +84,26 @@ def main(patch: dict, draw_patches: bool = False):
 
     return patches, positions
 
+def save_patches(patches):
+
+    output_dir = Path(__file__).parent / "patches"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Remove all files in the output_dir before saving new patches
+    for file in output_dir.glob("*.png"):
+        file.unlink()
+
+    for i, patch in enumerate(patches):
+        patch_filename = output_dir / f"patch_{i:04d}.png"
+        cv2.imwrite(str(patch_filename), patch)
+
+    print(f"Saved {len(patches)} patches to {output_dir}")
+
 if __name__ == "__main__":
 
     patch_sizes = [256, 384, 512, 640]
-    patch_height = patch_sizes[2]
-    patch_width = patch_height * 2
+    patch_height = patch_sizes[3]
+    patch_width = int(patch_height * 4 / 3)
 
     stride_sizes = [1, 2, 4, 8]
     stride_size = stride_sizes[1]
@@ -102,4 +117,6 @@ if __name__ == "__main__":
         "stride_x": stride_x,
     }
 
-    main(patch, draw_patches=True)
+    patches, positions = main(patch, draw_patches=True)
+
+    save_patches(patches)
