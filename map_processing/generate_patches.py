@@ -1,6 +1,7 @@
 from pathlib import Path
 import cv2
 import numpy as np
+import json
 
 def get_map_path() -> Path:
     """
@@ -84,7 +85,7 @@ def main(patch: dict, draw_patches: bool = False):
 
     return patches, positions
 
-def save_patches(patches):
+def save_patches(patches, positions, patch_height, patch_width):
 
     output_dir = Path(__file__).parent / "patches"
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -98,10 +99,74 @@ def save_patches(patches):
         cv2.imwrite(str(patch_filename), patch)
 
     print(f"Saved {len(patches)} patches to {output_dir}")
+    
+    # Save patch position data as JSON files
+    save_patch_positions(positions, patch_height, patch_width)
+
+def calculate_patch_centers(positions, patch_height, patch_width):
+    """
+    Calculate the center positions of patches relative to the map's top-left corner (0,0).
+    
+    Args:
+        positions: List of (x, y) tuples representing top-left corners of patches
+        patch_height: Height of each patch
+        patch_width: Width of each patch
+    
+    Returns:
+        List of dictionaries with center_x and center_y coordinates
+    """
+    centers = []
+    for i, (x, y) in enumerate(positions):
+        center_x = x + patch_width // 2
+        center_y = y + patch_height // 2
+        centers.append({
+            "patch_id": i,
+            "center_x": int(center_x),
+            "center_y": int(center_y),
+            "top_left_x": int(x),
+            "top_left_y": int(y)
+        })
+    return centers
+
+def save_patch_positions(positions, patch_height, patch_width):
+    """
+    Save patch center positions as JSON files.
+    Creates both individual JSON files for each patch and a combined JSON file.
+    """
+    output_dir = Path(__file__).parent / "patches"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Remove existing JSON files
+    for file in output_dir.glob("*.json"):
+        file.unlink()
+    
+    centers = calculate_patch_centers(positions, patch_height, patch_width)
+    
+    # Save individual JSON files for each patch
+    for center_data in centers:
+        patch_id = center_data["patch_id"]
+        json_filename = output_dir / f"patch_{patch_id:04d}.json"
+        
+        with open(json_filename, 'w') as f:
+            json.dump(center_data, f, indent=2)
+    
+    # Save combined JSON file with all patch positions
+    combined_filename = output_dir / "all_patch_positions.json"
+    with open(combined_filename, 'w') as f:
+        json.dump({
+            "total_patches": len(centers),
+            "patch_dimensions": {
+                "height": patch_height,
+                "width": patch_width
+            },
+            "patches": centers
+        }, f, indent=2)
+    
+    print(f"Saved {len(centers)} patch position JSON files to {output_dir}")
 
 if __name__ == "__main__":
 
-    patch_sizes = [256, 384, 512, 640]
+    patch_sizes = [256, 384, 512, 640, 768, 1024, 1280, 1536, 1792, 2048]
     patch_height = patch_sizes[3]
     patch_width = int(patch_height * 4 / 3)
 
@@ -119,4 +184,4 @@ if __name__ == "__main__":
 
     patches, positions = main(patch, draw_patches=True)
 
-    save_patches(patches)
+    save_patches(patches, positions, patch_height, patch_width)
