@@ -30,12 +30,21 @@ def split_map_into_patches(image, patch_height, patch_width, stride_y, stride_x)
     patches = []
     positions = []
 
-    for y in range(0, h - patch_height + 1, stride_y):
-        for x in range(0, w - patch_width + 1, stride_x):
+    def create_patch_name(row, col):
+        row = str(row)
+        col = str(col)
+        i = row if len(row) > 1 else f"0{row}"
+        j = col if len(col) > 1 else f"0{col}"
+        return f"patch_{i}_{j}.png"
+
+    for i, y in enumerate(range(0, h - patch_height + 1, stride_y)):
+        for j, x in enumerate(range(0, w - patch_width + 1, stride_x)):
             patch = image[y:y + patch_height, x:x + patch_width]
             patches.append(patch)
             positions.append((x, y))
-    
+            names.append(create_patch_name(i, j))
+            max_col = max(max_col, j)
+            max_row = max(max_row, i)
 
     # include last patch with different overlap
     if h % patch_height > 0:
@@ -44,14 +53,25 @@ def split_map_into_patches(image, patch_height, patch_width, stride_y, stride_x)
             patch = image[y:y + patch_height, x:x + patch_width]
             patches.append(patch)
             positions.append((x, y))
+            names.append(create_patch_name(max_row + 1, j))
+    
     if w % patch_width > 0:
         x = w - patch_width
         for y in range(0, h - patch_height + 1, stride_y):
             patch = image[y:y + patch_height, x:x + patch_width]
             patches.append(patch)
             positions.append((x, y))
+            names.append(create_patch_name(i, max_col + 1))
+    
+    if h % patch_height > 0 and w % patch_width > 0:
+        y = h - patch_height
+        x = w - patch_width
+        patch = image[y:y + patch_height, x:x + patch_width]
+        patches.append(patch)
+        positions.append((x, y))
+        names.append(create_patch_name(max_row + 1, max_col + 1))
 
-    return patches, positions
+    return patches, positions, names
 
 def draw_patch_grid(image, patch_height, patch_width, stride_y, stride_x):
     vis = cv2.cvtColor(image.copy(), cv2.COLOR_GRAY2BGR)
@@ -71,21 +91,7 @@ def draw_patch_grid(image, patch_height, patch_width, stride_y, stride_x):
     return vis
 
 
-
-def main(patch: dict, draw_patches: bool = False):
-
-    map_path = get_map_path()
-    map_img = load_map_image(map_path)
-
-    patches, positions = split_map_into_patches(map_img, patch["height"], patch["width"], patch["stride_y"], patch["stride_x"])
-
-    if draw_patches:
-        grid_overlay = draw_patch_grid(map_img, patch["height"], patch["width"], patch["stride_y"], patch["stride_x"])
-        cv2.imwrite(Path(__file__).parent / "patch_grid_overlay.png", grid_overlay)
-
-    return patches, positions
-
-def save_patches(patches, positions, patch_height, patch_width):
+def save_patches(patches, names, positions):
 
     output_dir = Path(__file__).parent / "patches"
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -164,6 +170,34 @@ def save_patch_positions(positions, patch_height, patch_width):
     
     print(f"Saved {len(centers)} patch position JSON files to {output_dir}")
 
+    output_file = output_dir / "info.csv"
+
+    # Sort names and positions by name
+    sorted_items = sorted(zip(names, positions), key=lambda x: x[0])
+    names, positions = zip(*sorted_items)
+
+    with open(output_file, "w") as f:
+        f.write("name,x,y\n")
+        for name, (x, y) in zip(names, positions):
+            f.write(f"{name},{x},{y}\n")
+
+def main(patch: dict, draw_patches: bool = False):
+
+    map_path = get_map_path()
+    map_img = load_map_image(map_path)
+
+    patches, positions, names = split_map_into_patches(map_img, patch["height"], patch["width"], patch["stride_y"], patch["stride_x"])
+
+    # Sort patches, positions, names by name
+    sorted_items = sorted(zip(names, patches, positions), key=lambda x: x[0])
+    names, patches, positions = zip(*sorted_items)
+
+    if draw_patches:
+        grid_overlay = draw_patch_grid(map_img, patch["height"], patch["width"], patch["stride_y"], patch["stride_x"])
+        cv2.imwrite(Path(__file__).parent / "patch_grid_overlay.png", grid_overlay)
+
+    return patches, positions, names
+
 if __name__ == "__main__":
 
     patch_sizes = [256, 384, 512, 640, 768, 1024, 1280, 1536, 1792, 2048]
@@ -182,6 +216,6 @@ if __name__ == "__main__":
         "stride_x": stride_x,
     }
 
-    patches, positions = main(patch, draw_patches=True)
+    patches, positions, names = main(patch, draw_patches=True)
 
-    save_patches(patches, positions, patch_height, patch_width)
+    save_patches(patches, names, positions)
