@@ -1,0 +1,46 @@
+{
+  "0013.JPG": [
+    {
+      "patch_id": 45,
+      "patch_name": "patch_0045.png",
+      "similarity": 0.19539538025856018
+    },
+    {
+      "patch_id": 16,
+      "patch_name": "patch_0016.png",
+      "similarity": 0.19032174348831177
+    },
+    {
+      "patch_id": 56,
+      "patch_name": "patch_0056.png",
+      "similarity": 0.1829048991203308
+    },
+    {
+      "patch_id": 35,
+      "patch_name": "patch_0035.png",
+      "similarity": 0.18235036730766296
+    }
+  ],
+  "0014.JPG": [
+    {
+      "patch_id": 46,
+      "patch_name": "patch_0046.png",
+      "similarity": 0.28831079602241516
+    },
+    {
+      "patch_id": 27,
+      "patch_name": "patch_0027.png",
+      "similarity": 0.2823255956172943
+    },
+    {
+      "patch_id": 35,
+      "patch_name": "patch_0035.png",
+      "similarity": 0.2805858254432678
+    },
+    {
+      "patch_id": 16,
+      "patch_name": "patch_0016.png",
+      "similarity": 0.2575914263725281
+    }
+  ]
+}
