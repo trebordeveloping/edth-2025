@@ -1,0 +1,6 @@
+image_name,image_id,image_path,feature_dim
+0013.JPG,0013,data/train_data\train_images\0013.JPG,1000
+0014.JPG,0014,data/train_data\train_images\0014.JPG,1000
+0015.JPG,0015,data/train_data\train_images\0015.JPG,1000
+0016.JPG,0016,data/train_data\train_images\0016.JPG,1000
+0017.JPG,0017,data/train_data\train_images\0017.JPG,1000
